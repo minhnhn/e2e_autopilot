@@ -58,9 +58,10 @@ def train(training_data, testing_data):
         print("Iteration: {}".format(it))
         
         if it % 100 == 99:
-            batch_xs, batch_ys = testing_data.next_batch(1000)
+            batch_xs, batch_ys = testing_data.next_batch(100)
             error = session.run(loss, feed_dict={inputs_: batch_xs, targets_: batch_ys})
             print("Iteration: {}, Loss: {}, execution time: {}".format(it, error, time() - start_time))
+            saver.save(session, 'aya{}'.format(it), global_step=it)
 
     saver.save(session, 'aya', global_step=1000)
 
