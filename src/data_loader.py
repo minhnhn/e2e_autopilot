@@ -6,10 +6,10 @@ from random import randint
 
 
 class Dataset(object):
-    def __init__(self, inputs, outputs):
+    def __init__(self, inputs, outputs, checkpoint=0):
         self._inputs = inputs
         self._outputs = outputs
-        self._checkpoint = 0
+        self._checkpoint = checkpoint
 
     def next_batch(self, batch_size):
         i_batch, o_batch = [], []
@@ -25,8 +25,12 @@ class Dataset(object):
         self._checkpoint = j
         return i_batch, o_batch
 
+    @property
+    def checkpoint(self):
+        return self._checkpoint
 
-def load_part(filename, start_frame, end_frame, pace):
+
+def load_part(filename, start_frame, end_frame, pace, checkpoint=0):
     log = h5py.File('../data/log/' + filename + '.h5')
     cam = h5py.File('../data/camera/' + filename + '.h5')
 
@@ -47,7 +51,7 @@ def load_part(filename, start_frame, end_frame, pace):
             print('loaded {}/{}'.format(i - start_frame,
                                         end_frame - start_frame))
 
-    training_data = Dataset(training_input, training_output)
+    training_data = Dataset(training_input, training_output, checkpoint=checkpoint)
 
     test_filename = '7'
 
@@ -73,8 +77,8 @@ def load_part(filename, start_frame, end_frame, pace):
     return training_data, test_data
 
 
-def load_data():
-    return load_part("1", 20000, 150000, 5)
+def load_data(checkpoint=0):
+    return load_part("1", 20000, 150000, 5, checkpoint=checkpoint)
 
 
 def load_full_data():

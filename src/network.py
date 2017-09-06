@@ -1,7 +1,11 @@
 import tensorflow as tf
 from time import time
+import os
 
 import data_loader
+
+MODEL_PATH = "../models/"
+DATA_CHECKPOINT = 0
 
 
 def train(training_data, testing_data):
@@ -45,7 +49,7 @@ def train(training_data, testing_data):
     outputs = tf.nn.sigmoid(logits, name='outputs')
     loss = tf.reduce_mean(tf.squared_difference(outputs, targets_), name='loss')
 
-    opt = tf.train.AdamOptimizer(1e-4).minimize(loss)
+    opt = tf.train.AdamOptimizer(1e-4, name='opt').minimize(loss)
 
     saver = tf.train.Saver()
     session = tf.InteractiveSession()
@@ -54,19 +58,24 @@ def train(training_data, testing_data):
     for it in range(1000):
         start_time = time()
         batch_xs, batch_ys = training_data.next_batch(50)
+
+        data_checkpoint = training_data.checkpoint
+        with open(MODEL_PATH + "data_checkpoint.txt", 'w') as f:
+            f.write(str(data_checkpoint))
+
         session.run(opt, feed_dict={inputs_: batch_xs, targets_: batch_ys})
-        print("Iteration: {}".format(it))
+        print("Iteration: {}, execution time: {}".format(it, time() - start_time))
         
         if it % 100 == 99:
             batch_xs, batch_ys = testing_data.next_batch(100)
             error = session.run(loss, feed_dict={inputs_: batch_xs, targets_: batch_ys})
             print("Iteration: {}, Loss: {}, execution time: {}".format(it, error, time() - start_time))
-            saver.save(session, 'aya{}'.format(it), global_step=it)
+            saver.save(session, MODEL_PATH + 'aya{}'.format(it), global_step=it)
 
-    saver.save(session, 'aya', global_step=1000)
+    saver.save(session, MODEL_PATH + 'aya', global_step=1000)
 
 if __name__ == '__main__':
-    training_data, testing_data = data_loader.load_data()
+    training_data, testing_data = data_loader.load_data(checkpoint=DATA_CHECKPOINT)
     train(training_data, testing_data)
 
 
