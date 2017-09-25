@@ -24,7 +24,7 @@ def preview(filename):
     # fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     # out_vid = cv2.VideoWriter('../assets/demo.mp4', fourcc, 20.0, (320, 160))
 
-    for i in range(55000, 60000, 20):
+    for i in range(55000, 160000, 20):
         img = cam['X'][frame_stamp[i]]
         angle = log['steering_angle'][i]
         speed = log['speed'][i]
@@ -63,7 +63,7 @@ def preview(filename):
 
 
 def main():
-    preview(1)
+    preview(2)
 
 
 if __name__ == '__main__':

@@ -60,8 +60,6 @@ def train(training_data, testing_data):
         batch_xs, batch_ys = training_data.next_batch(50)
 
         data_checkpoint = training_data.checkpoint
-        with open(MODEL_PATH + "data_checkpoint.txt", 'w') as f:
-            f.write(str(data_checkpoint))
 
         session.run(opt, feed_dict={inputs_: batch_xs, targets_: batch_ys})
         print("Iteration: {}, execution time: {}".format(it, time() - start_time))
@@ -70,9 +68,12 @@ def train(training_data, testing_data):
             batch_xs, batch_ys = testing_data.next_batch(100)
             error = session.run(loss, feed_dict={inputs_: batch_xs, targets_: batch_ys})
             print("Iteration: {}, Loss: {}, execution time: {}".format(it, error, time() - start_time))
-            saver.save(session, MODEL_PATH + 'aya{}'.format(it), global_step=it)
+            saver.save(session, MODEL_PATH + 'aya', global_step=it)
+            with open(MODEL_PATH + "data_checkpoint.txt", 'w') as f:
+                f.write(str(data_checkpoint))
 
     saver.save(session, MODEL_PATH + 'aya', global_step=1000)
+
 
 if __name__ == '__main__':
     training_data, testing_data = data_loader.load_data(checkpoint=DATA_CHECKPOINT)

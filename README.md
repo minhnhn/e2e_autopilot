@@ -19,7 +19,7 @@ with dropouts and batch normalization.
 
 ### Setup and retrain the model
 1. You will need python 3.6
-2. Download the training data from Comma.ai
+2. Download the training data from Comma.ai and store to /data folder
 3. Run command: pip install -r requirements.txt
 4. Run command: python src/network.py
 

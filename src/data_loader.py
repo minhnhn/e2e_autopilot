@@ -18,7 +18,7 @@ class Dataset(object):
         for i in range(batch_size):
             i_batch.append(self._inputs[j])
             o_batch.append(self._outputs[j])
-            j += randint(1, 10)
+            j += randint(1, len(self._inputs))
             if j >= len(self._inputs):
                 j -= len(self._inputs)
 
@@ -47,8 +47,8 @@ def load_part(filename, start_frame, end_frame, pace, checkpoint=0):
         # img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2), interpolation=cv2.INTER_CUBIC)
         training_input.append(img / 256)
 
-        if i % 1000 == 0:
-            print('loaded {}/{}'.format(i - start_frame,
+        if (i+1) % 1000 == 0:
+            print('loaded {}/{}'.format(i + 1 - start_frame,
                                         end_frame - start_frame))
 
     training_data = Dataset(training_input, training_output, checkpoint=checkpoint)
@@ -65,12 +65,17 @@ def load_part(filename, start_frame, end_frame, pace, checkpoint=0):
     test_output = []
 
     for i in range(10000, min(len(frame_stamp), 40000), 5):
+        if speeds[i] < 5:
+            continue
         output = [min(1.0, angles[i] / 300.0), min(1.0, speeds[i] / 50.0)]
         test_output.append(output)
         img = np.transpose(cam['X'][frame_stamp[i]], (1, 2, 0))
         # img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2), interpolation=cv2.INTER_CUBIC)
         img = img / 256
         test_input.append(img)
+        if (i+1) % 1000 == 0:
+            print('loaded {}/{}'.format(i + 1 - start_frame,
+                                        end_frame - start_frame))
 
     test_data = Dataset(test_input, test_output)
 
@@ -78,7 +83,7 @@ def load_part(filename, start_frame, end_frame, pace, checkpoint=0):
 
 
 def load_data(checkpoint=0):
-    return load_part("1", 20000, 150000, 5, checkpoint=checkpoint)
+    return load_part("2", 60000, 150000, 5, checkpoint=checkpoint)
 
 
 def load_full_data():
