@@ -3,6 +3,7 @@ import numpy as np
 from skimage import transform as tf
 import matplotlib.pyplot as plt
 from scipy import signal
+from src import config
 
 rsrc = \
     [[43.45456230828867, 118.00743250075844],
@@ -330,35 +331,67 @@ def highlight_lane_pixels(img, bird_eye):
     return tmp
 
 
-def highlight_lane(img, bird_eye, left_poly, right_poly):
+def highlight_lane(img, bird_eye, left_poly, right_poly, idx):
     background = np.zeros((bird_eye.shape[0], bird_eye.shape[1], 3), dtype=np.uint8)
 
-    ys = np.arange(bird_eye.shape[0] // 2, bird_eye.shape[0])
+    ys = np.arange(bird_eye.shape[0] // 3, bird_eye.shape[0])
     for y in ys:
         left = fit_polynomial(y, left_poly)
         right = fit_polynomial(y, right_poly)
-        background[y, int(left):int(right)] = (0, 255, 0)
+        # background[y, int(left):int(right)] = (0, 255, 0)
 
-    dst_points = np.array([[0, 160], [320, 160], [114, 43], [172, 39]], np.float32)
+    dst_points = np.array([[0, 160], [320, 160], [114, 39], [172, 39]], np.float32)
     src_points = np.array([[200, 160], [400, 160], [140, 30], [360, 30]], np.float32)
     lambda_mat = cv2.getPerspectiveTransform(src_points, dst_points)
 
     background = cv2.warpPerspective(background, lambda_mat, (320, 160))
 
+    target_points = []
+    ys = ys[::len(ys) // 16]
+    ys = ys[(idx % 2)::2]
+
+    for y in ys:
+        target_points.append([fit_polynomial(y, left_poly), y])
+        target_points.append([fit_polynomial(y, right_poly), y])
+
+    target_points = np.array([target_points])
+
+    target_points = cv2.perspectiveTransform(target_points, lambda_mat)
+    target_points = np.array(target_points[0], dtype=np.int32)
+    for left_corner, right_corner in zip(target_points[::2], target_points[1::2]):
+        tbot = left_corner[1]
+        tleft = left_corner[0]
+        tright = right_corner[0]
+        twidth = tright - tleft
+        theight = twidth // 2
+        ttop = max(0, tbot - theight)
+        cv2.line(background, (tleft, tbot), (tright, tbot), (0, 255, 0))
+        cv2.line(background, (tleft, tbot), (tleft, ttop), (0, 255, 0))
+        cv2.line(background, (tright, tbot), (tright, ttop), (0, 255, 0))
+        cv2.line(background, (tleft, ttop), (tright, ttop), (0, 255, 0))
+
     return background
 
 
-def lane_extraction(img):
+def lane_extraction(img, current_lanes, idx):
     bird_eye = bird_eye_transform(img)
     left_poly, right_poly = get_lane_polynomials(bird_eye)
+    if current_lanes is not None:
+        if left_poly is not None:
+            left_poly = current_lanes[0] * config.decay_factor + left_poly * (1 - config.decay_factor)
+            right_poly = current_lanes[1] * config.decay_factor + right_poly * (1 - config.decay_factor)
+        else:
+            [left_poly, right_poly] = current_lanes
+
     result = None
     if left_poly is not None:
-        background = highlight_lane(img, bird_eye, left_poly, right_poly)
+        background = highlight_lane(img, bird_eye, left_poly, right_poly, idx)
         # return background
-        result = cv2.addWeighted(img, 1, background, 0.1, 0)
+        result = cv2.addWeighted(img, 1, background, .5, 0)
         background = highlight_lane_pixels(img, bird_eye)
         result = cv2.addWeighted(result, 1, background, 1, 0)
-    return result
+
+    return result, [left_poly, right_poly]
 
 
 # img = cv2.imread('../data/failed_img.jpg')

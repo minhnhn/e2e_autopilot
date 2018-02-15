@@ -3,7 +3,6 @@ from matplotlib import pylab as pl
 import h5py
 import cv2
 import numpy as np
-import utils
 import matplotlib.pyplot as plt
 import utils
 from time import time
@@ -34,15 +33,17 @@ img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # cv2.imwrite('../data/vehicle.jpg', img)
 
 pl.ion()
-img = utils.lane_extraction(img)
+img, _ = utils.lane_extraction(img, None, 0)
 my_img = pl.imshow(img)
 
 current_angle = 0
 delta = 0
 heat_map = None
+current_lanes = None
 detection_model = vehicle_detect_utils.get_clf_model()
+time_step = 10
 
-for i in range(75000, 200000, 20):
+for i in range(125000, 200000, time_step):
     crt_time = time()
     img = cam['X'][frame_stamp[i]]
     angle = log['steering_angle'][i]
@@ -63,7 +64,7 @@ for i in range(75000, 200000, 20):
 
     current_angle = utils.angle_shift(current_angle, pred_angle)
 
-    tmp = utils.lane_extraction(img)
+    tmp, current_lanes = utils.lane_extraction(img, current_lanes, i // time_step)
     if tmp is not None:
         img = tmp
 
